@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Reflection;
 using TwinCAT.TypeSystem;
 
@@ -228,6 +229,60 @@ namespace TcAdsExtensions.ADS
             return obj;
         }
 
+        public static ExpandoObject GetStruct(this ISymbol Symbol)
+        {
+            // cast to IValueSymbol
+            IValueSymbol symbol = (IValueSymbol)Symbol;
+
+            // create dynamic expandable object to hold data
+            dynamic myobj = new ExpandoObject();
+
+            // primitive types
+            if (symbol.IsPrimitiveType)
+            {
+                ((IDictionary<string, object>)myobj).Add(symbol.InstanceName, symbol.ReadValue());
+                //return myobj;
+            }
+            else
+            {
+                // array of structs
+                //***********NOT WORKING************
+                if (symbol.Category == DataTypeCategory.Array)
+                {
+                    // declare sub element array for parallelization
+                    // calling dict.Add() in parallel loop will result in
+                    // out-of-order elements
+                    var sub = new KeyValuePair<string, object>[symbol.SubSymbols.Count];
+                    // loop through struct array and call recursively
+                    for (int i = 0; i < symbol.SubSymbols.Count; i++)
+                    {
+                        sub[i] = new KeyValuePair<string, object>(symbol.SubSymbols[i].InstanceName, symbol.SubSymbols[i].GetStruct());
+                        //((IDictionary<string, object>)myobj).Add(symbol.InstanceName, symbol.SubSymbols[i].GetStruct());
+                    }
+                    ((IDictionary<string, object>)myobj).Add(symbol.InstanceName, sub);
+                    //return myobj;
+                    //// add loaded KVPs into dictionary
+                    //foreach (KeyValuePair<string, object> pair in sub)
+                    //{
+                    //    dict.Add(pair.Key, pair.Value);
+                    //}
+                }
+                // struct
+                else if (symbol.Category == DataTypeCategory.Struct)
+                {
+                    int i = 0;
+                    foreach (IValueSymbol symb in symbol.SubSymbols)
+                    {
+                        if (symb.IsPrimitiveType)
+                            ((IDictionary<string, object>)myobj).Add(symb.InstanceName, symb.ReadValue());
+                        else
+                            ((IDictionary<string, object>)myobj).Add(symb.InstanceName, symb.GetStruct());
+                        i++;
+                    }
+                }
+            }
+            return myobj;
+        }
 
         /// <summary>
         /// Reads ADS Symbol into Dictionary of key/value pairs.

@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.6">
+  <DUT Name="TestStruct2" Id="{4d41ed42-484f-4ec3-8dfc-b65924c5a5e7}">
+    <Declaration><![CDATA[TYPE TestStruct2 :
+STRUCT
+	bTest			: BOOL := TRUE;
+	fTestLreal		: LREAL := 77.777;
+	sTest			: T_MAXSTRING := 'This could be a really long string...';
+	//aInt			: ARRAY[0..2] OF INT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

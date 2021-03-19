@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.6">
+  <DUT Name="TestStructComplex" Id="{daace5bd-64ef-4fa7-9678-bf0d7acf5fb8}">
+    <Declaration><![CDATA[TYPE TestStructComplex :
+STRUCT
+	iVal 	: DINT := 2;
+	fVal 	: REAL := 2.2;
+	sVal 	: STRING := 'Too many twos';
+	stTest	: TestStruct2;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

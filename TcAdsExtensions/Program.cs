@@ -1,5 +1,6 @@
 ﻿using System;
 using TcAdsExtensions.ADS;
+using Newtonsoft.Json;
 
 namespace TcAdsExtensions
 {
@@ -16,8 +17,22 @@ namespace TcAdsExtensions
 
                     try
                     {
+                        //read structure(simple) with no definition specified and write to console
+                        var readStruct = connection.ReadStructSymbol("GVL.PlcStruct");
+                        Console.WriteLine(JsonConvert.SerializeObject(readStruct));
+                        
+                        //read structure(complex) with no definition specified and write to console
+                        var readStructComplex = connection.ReadStructSymbol("GVL.PlcStructComplex");
+                        Console.WriteLine(JsonConvert.SerializeObject(readStructComplex));
+
+                        //var readarray = connection.ReadStructSymbol("GVL.aString");
+                        //Console.WriteLine(JsonConvert.SerializeObject(readarray));
+
+                        //connection.WritePrimitiveSymbol("GVL.aString", JsonConvert.SerializeObject(readarray));
+                        connection.WriteStructSymbol("GVL.PlcStructComplex", readStructComplex);
+
                         // read structure data
-                        var readData = connection.ReadStructSymbol<TestStruct>("GVL.PlcStruct");
+                        var readData = connection.ReadStructSymbol<TestStruct>("GVL.PlcStruct");                        
 
                         // modify data
                         readData.iVal = readData.iVal + 1;
@@ -72,8 +87,7 @@ namespace TcAdsExtensions
             }
 
             Console.WriteLine("Global OnChange raised: ");
-            Console.WriteLine($"{symbolPath} vale = {val.ToString()}.");
-            
+            Console.WriteLine($"{symbolPath} vale = {val.ToString()}.");            
         }
 
         // called onchange for specified symbol

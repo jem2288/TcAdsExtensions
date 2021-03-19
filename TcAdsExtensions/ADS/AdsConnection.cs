@@ -155,6 +155,23 @@ namespace TcAdsExtensions.ADS
         }
 
         /// <summary>
+        /// Reads non-primitive / structure type symbol with unknown definition
+        /// </summary>
+        /// <param name="SymbolPath"></param>
+        /// <returns></returns> Object created from dynamic expando object 
+        public object ReadStructSymbol(string SymbolPath)
+        {
+            try
+            {
+                return _symbolLoader.Symbols[SymbolPath].GetStruct();
+            }
+            catch
+            {
+                return new object();
+            }
+        }
+
+        /// <summary>
         /// Writes to non-primitive / structure type symbol
         /// </summary>
         /// <param name="SymbolPath">Symbol path</param>
