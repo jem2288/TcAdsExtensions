@@ -1,6 +1,10 @@
 ﻿using System;
 using TcAdsExtensions.ADS;
 using Newtonsoft.Json;
+using TwinCAT;
+using TwinCAT.Ads;
+using TwinCAT.Ads.TypeSystem;
+using TwinCAT.TypeSystem;
 
 namespace TcAdsExtensions
 {
@@ -8,64 +12,63 @@ namespace TcAdsExtensions
     {
         static void Main(string[] args)
         {
-            // Example client
-            using (var connection = new AdsConnection("127.0.0.1.1.1:851"))
+
+            using (TcAdsClient client = new TcAdsClient())
             {
-                if (connection.IsConnected)
-                {
-                    Console.WriteLine("Connection Established");
+                uint valueToRead = 0;
+                uint valueToWrite = 42;
 
-                    try
-                    {
-                        //read structure(simple) with no definition specified and write to console
-                        var readStruct = connection.ReadStructSymbol("GVL.PlcStruct");
-                        Console.WriteLine(JsonConvert.SerializeObject(readStruct));
-                        
-                        //read structure(complex) with no definition specified and write to console
-                        var readStructComplex = connection.ReadStructSymbol("GVL.PlcStructComplex");
-                        Console.WriteLine(JsonConvert.SerializeObject(readStructComplex));
+                client.Connect(AmsNetId.Local, 851);
 
-                        //var readarray = connection.ReadStructSymbol("GVL.aString");
-                        //Console.WriteLine(JsonConvert.SerializeObject(readarray));
+                // Load all Symbols + DataTypes
+                // Primitive Parts will be automatically resolved to .NET Primitive types.
+                IDynamicSymbolLoader loader = (IDynamicSymbolLoader)SymbolLoaderFactory.Create(client, SymbolLoaderSettings.DefaultDynamic);
 
-                        //connection.WritePrimitiveSymbol("GVL.aString", JsonConvert.SerializeObject(readarray));
-                        connection.WriteStructSymbol("GVL.PlcStructComplex", readStructComplex);
+                dynamic symbols = loader.SymbolsDynamic;
+                dynamic GVL = symbols.GVL;
 
-                        // read structure data
-                        var readData = connection.ReadStructSymbol<TestStruct>("GVL.PlcStruct");                        
+                // Use typed object to use InfoTips
+                //DynamicSymbol iCustomEvent = GVL.iCustomEvent; // UDINT
 
-                        // modify data
-                        readData.iVal = readData.iVal + 1;
-                        readData.fVal = readData.fVal + 1.1f;
-                        readData.sVal = readData.sVal + '1';
+                // or to be fullDynamic 
+                //dynamic nCounter = main.nCounter;
 
-                        // write back
-                        connection.WriteStructSymbol("GVL.PlcStruct", readData);
+                // Works for ALL sorts of types (not restricted to ANY_TYPE basing primitive types)
+                //valueToRead = (uint)nCounter.ReadValue();
+                // or
+                //var varValue = nCounter.ReadValue();
+                // or
+                dynamic iCustomEvent = GVL.iCustomEvent.ReadValue();
 
-                        // global event handler example
-                        connection.OnSymbolValueChanged += Connection_OnSymbolValueChanged;
-                        connection.SubscribeOnValueChange("GVL.iEventData1");
-                        connection.SubscribeOnValueChange("GVL.fEventData2");
+                // Same for writing
+                //nCounter.WriteValue(valueToWrite);
 
-                        // custom event handler example
-                        connection.SubscribeOnValueChange("GVL.iCustomEvent", Connection_CustomValueChanged);
+                // Or Notifications / Events
+                //nCounter.ValueChanged += NCounter_ValueChanged;
 
-                        // suspend to test events
-                        Console.ReadLine();
-                    }
-                    catch (Exception Ex)
-                    {
-                        Console.WriteLine(Ex.Message);
-                        Console.ReadLine();
-                    }
+                //Reading complexTypes e.g. Struct
 
-                }
-                else
-                {
-                    Console.WriteLine("Connection Failed. Check AmsNetId and Target status.");
-                    Console.ReadLine();
-                }
-            }
+                DynamicSymbol myStructSymbol = GVL.PlcStructComplex; // Dynamically created
+                dynamic myStructVal = myStructSymbol.ReadValue(); // Takes an ADS Snapshot of the value
+
+                //dynamic int1Val = myStructVal.int1; // Value to an INT (short)
+                //dynamic valueNestedStruct = myStructVal.nestedStruct; //value to another complex type (here a nested Struct)
+
+                myStructSymbol.ValueChanged += MyStructSymbol_ValueChanged;
+
+                Console.ReadLine();
+            }            
+        }
+
+        private static void NCounter_ValueChanged(object sender, ValueChangedArgs e)
+        {
+            var uintVal = e.Value;
+        }
+
+        private static void MyStructSymbol_ValueChanged(object sender, ValueChangedArgs e)
+        {
+            dynamic structValue = e.Value; // Snapshot of the whole Struct and all its contents
+            Console.WriteLine(JsonConvert.SerializeObject(structValue));
         }
 
         // called onchange of any subscribed symbol
